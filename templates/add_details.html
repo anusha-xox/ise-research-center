@@ -1,0 +1,12 @@
+{% import 'bootstrap/wtf.html' as wtf %}
+{% include "header.html" %}
+<div id="main">
+	<div class="inner">
+		<header>
+			<h1>Welcome {{display_name}}</h1>
+			<br>
+		</header>
+        <p> {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "btn btn-primary text-uppercase"}) }}</p>
+    </div>
+</div>
+{% include "footer.html" %}
