@@ -9,7 +9,7 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, cur
 import email_validator
 from flask_bootstrap import Bootstrap
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
-from form_data import LoginForm, RegisterForm
+from form_data import LoginForm, RegisterForm, CandidateForm
 
 app = Flask(__name__)
 
@@ -70,16 +70,16 @@ def home():
 def register():
     form = RegisterForm()
     if form.validate_on_submit():
-        username = form.username.data,
         new_user = User(
-            username=username,
+            username=form.username.data,
             email=form.email.data,
             password=generate_password_hash(form.password.data, method='pbkdf2:sha256', salt_length=8)
         )
         db.session.add(new_user)
         db.session.commit()
-        render_template(url_for('home', display_name=username))
-    return render_template("enter.html")
+        display_name = form.username.data
+        return render_template(url_for('candidate_details', display_name=display_name))
+    return render_template("enter.html", form=form, title_given="Register")
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -90,10 +90,28 @@ def login():
         password = form.password.data
         if email == 'admin@email.com' and password == 'admin':
             return redirect(url_for('admin'))
+        else:
+            user = User.query.filter_by(email=email).first()
+            if check_password_hash(user.password, password):
+                login_user(user)
+                return render_template(url_for('candidate_details', display_name=user.username))
+    return render_template('enter.html', form=form, title_given="Login")
 
 
-@app.route('/admin')
+@app.route('/candidate-details', methods=['GET', 'POST'])
+def candidate_details():
+    display_name = request.args.get("display_name")
+    form = CandidateForm()
+    return render_template("add_details.html", form=form, display_name=display_name)
+
+
+@app.route('/admin', methods=['GET', 'POST'])
 def admin():
+    return render_template("admin-home.html")
+
+
+@app.route('/about')
+def about():
     pass
 
 
@@ -101,3 +119,7 @@ def admin():
 def logout():
     logout_user()
     return redirect(url_for('home'))
+
+
+if __name__ == "__main__":
+    app.run(debug=True)

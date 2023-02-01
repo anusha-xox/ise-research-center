@@ -38,4 +38,5 @@ class CandidateForm(FlaskForm):
     thesis_title = StringField('Title of Thesis', validators=[DataRequired()])
     duration_type = SelectField('Duration Type', choices=DURATION_TYPE, validators=[DataRequired()])
     c_email = StringField('Email', validators=[DataRequired(), Email()])
-    c_phone = db.Column(db.Integer, unique=True, nullable=False)
+    c_phone = StringField('Phone No.', validators=[DataRequired()])
+    submit = SubmitField(label='Submit')
