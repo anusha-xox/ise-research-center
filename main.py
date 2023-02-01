@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, url_for, redirect, flash, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
+import datetime
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, SelectField
 from wtforms.validators import DataRequired, URL, Email
@@ -14,12 +15,12 @@ from form_data import LoginForm, RegisterForm, CandidateForm
 app = Flask(__name__)
 
 ## ADMIN ADDS PROFESSORS, INDUSTRIES, ETC.
+## one to many bw guide and candidate
 
 app.config['SECRET_KEY'] = 'any-secret-key-you-choose'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_BINDS'] = {'candidate': 'sqlite:///candidate.db',
-                                  'admin': 'sqlite:///admin.db',
-                                  'departments': 'sqlite:///departments.db'}
+                                  'admin': 'sqlite:///admin.db'}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -39,6 +40,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(1000))
     email = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(100))
+    # posts = db.relationship("Model_name", backref="add_col_to_post_model_kinda, col won't be visible in table", lazy=True)
 
 
 class Candidate(db.Model):
@@ -49,6 +51,7 @@ class Candidate(db.Model):
     c_lname = db.Column(db.String(1000))
     c_gender = db.Column(db.String(1000))
     reg_category = db.Column(db.String(1000))
+    # reg_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     reg_day = db.Column(db.Integer, nullable=False)
     reg_month = db.Column(db.Integer, nullable=False)
     reg_year = db.Column(db.Integer, nullable=False)
@@ -56,6 +59,12 @@ class Candidate(db.Model):
     duration_type = db.Column(db.String(1000), nullable=False)
     c_email = db.Column(db.String(100), unique=True, nullable=False)
     c_phone = db.Column(db.Integer, unique=True, nullable=False)
+
+    # content = db.Column(db.Text, nullable=False)
+    # user_id = db.Column(db.Integer, db.ForeignKey("table_name.column_name"), nullable=False)
+
+    def __repr__(self):
+        return f"Added"
 
 
 db.create_all()
@@ -88,8 +97,15 @@ def login():
     if form.validate_on_submit():
         email = form.email.data
         password = form.password.data
+        user = User.query.filter_by(email=email).first()
         if email == 'admin@email.com' and password == 'admin':
             return redirect(url_for('admin'))
+        elif not user:
+            flash("That email does not exist, please try again.")
+            return redirect(url_for('login'))
+        elif not check_password_hash(user.password, password):
+            flash('Password incorrect, please try again.')
+            return redirect(url_for('login'))
         else:
             user = User.query.filter_by(email=email).first()
             if check_password_hash(user.password, password):
