@@ -78,7 +78,7 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         display_name = form.username.data
-        return render_template(url_for('candidate_details', display_name=display_name))
+        return redirect(url_for('candidate_details', display_name=display_name))
     return render_template("enter.html", form=form, title_given="Register")
 
 
@@ -94,7 +94,7 @@ def login():
             user = User.query.filter_by(email=email).first()
             if check_password_hash(user.password, password):
                 login_user(user)
-                return render_template(url_for('candidate_details', display_name=user.username))
+                return redirect(url_for('candidate_details', display_name=user.username))
     return render_template('enter.html', form=form, title_given="Login")
 
 
@@ -102,6 +102,25 @@ def login():
 def candidate_details():
     display_name = request.args.get("display_name")
     form = CandidateForm()
+    if form.validate_on_submit():
+        new_candidate = Candidate(
+            vtu_no=form.vtu_no.data,
+            c_fname=form.c_fname.data,
+            c_mname=form.c_mname.data,
+            c_lname=form.c_lname.data,
+            c_gender=form.c_gender.data,
+            reg_category=form.reg_category.data,
+            reg_day=form.reg_date.data,
+            reg_month=form.reg_month.data,
+            reg_year=form.reg_year.data,
+            thesis_title=form.thesis_title.data,
+            duration_type=form.duration_type.data,
+            c_email=form.c_email.data,
+            c_phone=form.c_phone.data
+        )
+        db.session.add(new_candidate)
+        db.session.commit()
+        return redirect(url_for('logout'))
     return render_template("add_details.html", form=form, display_name=display_name)
 
 
