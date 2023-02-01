@@ -14,8 +14,8 @@ from form_data import LoginForm, RegisterForm, CandidateForm
 
 app = Flask(__name__)
 
-## ADMIN ADDS PROFESSORS, INDUSTRIES, ETC.
-## one to many bw guide and candidate
+# ADMIN ADDS PROFESSORS, INDUSTRIES, ETC.
+# one to many bw guide and candidate
 
 app.config['SECRET_KEY'] = 'any-secret-key-you-choose'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
@@ -40,7 +40,8 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(1000))
     email = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(100))
-    # posts = db.relationship("Model_name", backref="add_col_to_post_model_kinda, col won't be visible in table", lazy=True)
+    # posts = db.relationship("Model_name", backref="add_col_to_post_model_kinda, col won't be visible in table",
+    # lazy=True)
 
 
 class Candidate(db.Model):
