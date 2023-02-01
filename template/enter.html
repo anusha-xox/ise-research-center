@@ -1,0 +1,64 @@
+{% import "bootstrap/wtf.html" as wtf %}
+
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>DBD Lab</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="static/assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="static/assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<div class="inner">
+
+							<!-- Logo -->
+								<a href="index.html" class="logo">
+									<span class="symbol"><img src="static/images/logo.svg" alt="" /></span><span class="title">DBD Lab</span>
+								</a>
+
+							<!-- Nav -->
+								<nav>
+									<ul>
+										<li><a href="#menu">Menu</a></li>
+									</ul>
+								</nav>
+
+						</div>
+					</header>
+                <!-- Menu -->
+					<nav id="menu">
+						<h2>Menu</h2>
+						<ul>
+							<li><a href="{{ url_for('home') }}">Home</a></li>
+							<li><a href="{{ url_for('about') }}">About</a></li>
+							<li><a href="{{ url_for('login') }}">Logout</a></li>
+						</ul>
+					</nav>
+                <div id="main">
+						<div class="inner">
+							<header>
+								<h1>ISE Research Center Management</h1>
+                                <br>
+								<h2>{{ title_given }}</h2>
+								<p> </p>
+							</header>
+                            <p> {{ wtf.quick_form(form) }}</p>
+
+                            <!-- Footer -->
+			</div>
+
+		<!-- Scripts -->
+			<script src="static/assets/js/jquery.min.js"></script>
+			<script src="static/assets/js/browser.min.js"></script>
+			<script src="static/assets/js/breakpoints.min.js"></script>
+			<script src="static/assets/js/util.js"></script>
+			<script src="static/assets/js/main.js"></script>
+
+	</body>
+</html>
