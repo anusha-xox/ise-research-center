@@ -9,7 +9,7 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, cur
 import email_validator
 from flask_bootstrap import Bootstrap
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
-from form_data import LoginForm
+from form_data import LoginForm, RegisterForm
 
 app = Flask(__name__)
 
@@ -27,6 +27,7 @@ bootstrap = Bootstrap(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -57,4 +58,46 @@ class Candidate(db.Model):
     c_phone = db.Column(db.Integer, unique=True, nullable=False)
 
 
+db.create_all()
 
+
+@app.route('/')
+def home():
+    return redirect(url_for('register'))
+
+
+@app.route('/register', methods=["GET", "POST"])
+def register():
+    form = RegisterForm()
+    if form.validate_on_submit():
+        username = form.username.data,
+        new_user = User(
+            username=username,
+            email=form.email.data,
+            password=generate_password_hash(form.password.data, method='pbkdf2:sha256', salt_length=8)
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        render_template(url_for('home', display_name=username))
+    return render_template("enter.html")
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+        if email == 'admin@email.com' and password == 'admin':
+            return redirect(url_for('admin'))
+
+
+@app.route('/admin')
+def admin():
+    pass
+
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('home'))

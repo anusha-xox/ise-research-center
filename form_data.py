@@ -23,6 +23,7 @@ class RegisterForm(FlaskForm):
     password = PasswordField(label='Password', validators=[DataRequired()])
     submit = SubmitField(label='Register')
 
+
 class CandidateForm(FlaskForm):
     __bind_key__ = 'candidate'
     vtu_no = StringField('VTU Registration Number', validators=[DataRequired()])
