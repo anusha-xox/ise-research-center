@@ -48,6 +48,11 @@
 								<h2>{{ title_given }}</h2>
 								<p> </p>
 							</header>
+							{% if title_given == "Login" %}
+							{% for message in get_flashed_messages() %}
+							{{ message }}
+							{% endfor %}
+							{% endif %}
                             <p> {{ wtf.quick_form(form) }}</p>
 							{% if title_given == "Register" %}
 							<p><b>Already Registered? Login <a href="{{ url_for('login') }}">here</a>.</b></p>
@@ -56,6 +61,7 @@
                             <!-- Footer -->
 							{% endif %}
 			</div>
+					</div>
 
 		<!-- Scripts -->
 			<script src="static/js/jquery.min.js"></script>
