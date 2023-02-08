@@ -10,6 +10,7 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, cur
 import email_validator
 from flask_bootstrap import Bootstrap
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
+from flask_ckeditor import CKEditor, CKEditorField
 from form_data import *
 
 app = Flask(__name__)
@@ -19,9 +20,11 @@ app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'any-secret-key-you-choose'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///iseResearch.db'
-# app.config['SQLALCHEMY_BINDS'] = {'candidate': 'sqlite:///candidate.db',
-#                                   'admin': 'sqlite:///admin.db'}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app.config['CKEDITOR_PKG_TYPE'] = 'full-all'
+ckeditor = CKEditor(app)
+
 db = SQLAlchemy(app)
 
 bootstrap = Bootstrap(app)
@@ -46,14 +49,13 @@ class Candidate(db.Model):
     c_lname = db.Column(db.String(1000))
     c_gender = db.Column(db.String(1000))
     reg_category = db.Column(db.String(1000))
-    reg_day = db.Column(db.Integer, nullable=False)
-    reg_month = db.Column(db.Integer, nullable=False)
-    reg_year = db.Column(db.Integer, nullable=False)
+    reg_date = db.Column(db.String(1000), nullable=False)
     thesis_title = db.Column(db.String(1000), nullable=False)
     duration_type = db.Column(db.String(1000), nullable=False)
     c_email = db.Column(db.String(100), unique=True, nullable=False)
     c_phone = db.Column(db.Integer, unique=True, nullable=False)
     c_guide = db.Column(db.String(1000))
+    thesis_phase = db.Column(db.String(1000))
 
 
 class Guide(db.Model):
@@ -75,6 +77,14 @@ class ProjectDetails(db.Model):
     funded_by = db.Column(db.String(1000), nullable=False)
     status = db.Column(db.String(1000), nullable=False)
     title = db.Column(db.String(1000), nullable=False)
+
+
+class Messages(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    subject = db.Column(db.String(250), unique=True, nullable=False)
+    date = db.Column(db.String(250), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    author_email = db.Column(db.String(250), nullable=False)
 
 
 @login_manager.user_loader
@@ -157,9 +167,7 @@ def candidate_details():
             c_lname=form.c_lname.data,
             c_gender=form.c_gender.data,
             reg_category=form.reg_category.data,
-            reg_day=form.reg_date.data,
-            reg_month=form.reg_month.data,
-            reg_year=form.reg_year.data,
+            reg_date=form.reg_date.data,
             thesis_title=form.thesis_title.data,
             duration_type=form.duration_type.data,
             c_email=form.c_email.data,
@@ -183,7 +191,9 @@ def candidate_dashboard():
         "View Messages from Guide",
         "Upload Documents to Guide"
     ]
-    CANDIDATE_LINKS = []
+    CANDIDATE_LINKS = [
+        url_for("view_details_candidate", vtu_no=vtu_no)
+    ]
     return render_template(
         "grid.html",
         title=f"{current_candidate.c_fname} {current_candidate.c_mname} {current_candidate.c_lname}",
@@ -191,6 +201,14 @@ def candidate_dashboard():
         grid_links=CANDIDATE_LINKS,
         grid_no=len(CANDIDATE_OPTIONS)
     )
+
+
+@app.route("/view-details-candidate")
+def view_details_candidate():
+    vtu_no = int(request.args.get("vtu_no"))
+    current_candidate = Candidate.query.get(vtu_no)
+    return render_template("view_details_candidate.html", c=current_candidate,
+                           table_heading=f"{current_candidate.c_fname} {current_candidate.c_mname} {current_candidate.c_lname}'s Entered Details")
 
 
 @app.route('/admin', methods=['GET', 'POST'])
@@ -250,7 +268,9 @@ def guide_dashboard():
     GUIDE_LINKS = [
         "",
         "",
-        url_for("view_candidates_under", g_email=current_guide.g_email)
+        url_for("view_candidates_under", g_email=current_guide.g_email),
+        "",
+        url_for("add_messages", email=current_guide.g_email)
     ]
     return render_template(
         "grid.html",
@@ -259,6 +279,44 @@ def guide_dashboard():
         grid_links=GUIDE_LINKS,
         grid_no=len(GUIDE_OPTIONS)
     )
+
+
+@app.route("/update-thesis-status", methods=["GET", "POST"])
+def update_thesis_status():
+    vtu_no = int(request.args.get("vtu_no"))
+    current_candidate = Candidate.query.get(vtu_no)
+    current_guide = Guide.query.filter_by(g_email=current_candidate.c_guide).first()
+    form = UpdatePhdStatus(
+        vtu_no=vtu_no,
+        full_name=f"{current_candidate.c_fname} {current_candidate.c_mname} {current_candidate.c_lname}"
+    )
+    if form.validate_on_submit():
+        current_candidate.thesis_phase = form.thesis_phase.data
+        db.session.commit()
+        return redirect(url_for("guide_dashboard", g_id=current_guide.g_id))
+    return render_template("add_details.html", form=form,
+                           display_name=f"{current_guide.g_fname} {current_guide.g_mname} {current_guide.g_lname}")
+
+
+@app.route("/add-messages", methods=["GET", "POST"])
+def add_messages():
+    author_email = request.args.get("email")
+    current_guide = Guide.query.filter_by(g_email=author_email).first()
+    form = MessageForm(
+        author_email=author_email,
+        date=datetime.datetime.now(),
+    )
+    if form.validate_on_submit():
+        new_message = Messages(
+            subject=form.subject.data,
+            date=form.date.data,
+            body=form.body.data,
+            author_email=form.author_email.data
+        )
+        db.session.add(new_message)
+        db.session.commit()
+        return redirect(url_for("guide_dashboard", g_id=current_guide.g_id))
+    return render_template("add_details.html", form=form, display_name=f"{current_guide.g_fname} {current_guide.g_mname} {current_guide.g_lname}")
 
 
 @app.route("/view-candidates-under")

@@ -2471,6 +2471,8 @@ input, select, textarea {
 		text-overflow: ellipsis;
 		text-transform: uppercase;
 		white-space: nowrap;
+		/*new css*/
+		margin-top: 40px;
 	}
 
 		input[type="submit"].icon:before,

@@ -19,11 +19,9 @@
       <th scope="col">Duration</th>
       <th scope="col">Email</th>
       <th scope="col">Phone</th>
-      <th scope="col">Thesis Phase</th>
     </tr>
   </thead>
   <tbody>
-    {% for c in candidates: %}
     <tr>
       <th scope="row">{{ c.vtu_no }}</th>
       <td>{{c.c_fname}} {{c.c_mname}} {{c.c_lname}}</td>
@@ -33,17 +31,7 @@
       <td>{{c.duration_type}}</td>
       <td>{{c.c_email}}</td>
       <td>{{c.c_phone}}</td>
-      <td>{{c.thesis_phase}}</td>
-
-      <td>
-<!--          <p><b><a href="{{ url_for('register') }}">Approve</a>.</b></p>-->
-          <form action="{{ url_for('update_thesis_status', vtu_no= c.vtu_no)}}" method="post">
-                      <input class="btn btn-default" id="submit" name="submit" type="submit" value="Update Status">
-            </form>
-      </td>
-
     </tr>
-    {% endfor %}
   </tbody>
 </table>
                 </div>

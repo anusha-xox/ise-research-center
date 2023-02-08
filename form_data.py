@@ -7,7 +7,8 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, cur
 import email_validator
 from wtforms.fields.html5 import DateField
 from wtforms.validators import ValidationError
-from main import Guide
+from main import Guide, ckeditor
+from flask_ckeditor import CKEditor, CKEditorField
 
 REG_CATEGORY = ["GM", "SC", "ST", "Physically Handicapped", "Other"]
 GENDER = ["Male", "Female", "Non-Binary", "Other", "Prefer not to say"]
@@ -16,6 +17,8 @@ DESIGNATION = ["Assistant Professor", "Associate Professor", "Professor", "HOD"]
 ASSO_RC = ["CSE", "ISE"]
 PROJECT_STATUS = ["Completed", "Ongoing"]
 PROJECT_TYPE = ["Research", "Consultancy"]
+THESIS_PHASES = ["Comprehensive Viva", "Coursework Completion", "Degree Certification", "Open Seminar - 1",
+                 "Open Seminar - 2", "Thesis Submission", "Vivavoce"]
 
 
 class LoginForm(FlaskForm):
@@ -38,14 +41,15 @@ class CandidateForm(FlaskForm):
     c_lname = StringField('Last Name')
     c_gender = SelectField('Gender', choices=GENDER, validators=[DataRequired()])
     reg_category = SelectField('Department Name', choices=REG_CATEGORY, validators=[DataRequired()])
-    reg_date = StringField('Date of Registration', validators=[DataRequired()])
-    reg_month = StringField('Month of Registration', validators=[DataRequired()])
-    reg_year = StringField('Year of Registration', validators=[DataRequired()])
+    reg_date = DateField('Registration Date', format='%Y-%m-%d')
     thesis_title = StringField('Title of Thesis', validators=[DataRequired()])
     duration_type = SelectField('Duration Type', choices=DURATION_TYPE, validators=[DataRequired()])
     c_email = StringField('Email', validators=[DataRequired(), Email()], render_kw={'readonly': True})
     c_phone = StringField('Phone No.', validators=[DataRequired()])
     c_guide = SelectField("Choose Guide")
+
+    def validate_reg_date(form, field):
+        pass
 
     def __init__(self, *args, **kwargs):
         super(CandidateForm, self).__init__(*args, **kwargs)
@@ -80,3 +84,19 @@ class ProjectForm(FlaskForm):
             pass
         elif field.data < form.date_of_issue.data:
             raise ValidationError("End date must not be earlier than start date.")
+
+
+class UpdatePhdStatus(FlaskForm):
+    vtu_no = StringField('VTU Registration Number Of Candidate', validators=[DataRequired()],
+                         render_kw={'readonly': True})
+    full_name = StringField('Full Name', validators=[DataRequired()], render_kw={'readonly': True})
+    thesis_phase = SelectField('Current Phase of Thesis', choices=THESIS_PHASES, validators=[DataRequired()])
+    submit = SubmitField(label='Submit')
+
+
+class MessageForm(FlaskForm):
+    subject = StringField("Subject", validators=[DataRequired()])
+    date = StringField(label='Date and Time', validators=[DataRequired()], render_kw={'readonly': True})
+    body = CKEditorField("Message Content", validators=[DataRequired()])
+    author_email = StringField(label='Email', validators=[DataRequired(), Email()], render_kw={'readonly': True})
+    submit = SubmitField(label='Send Message To All')

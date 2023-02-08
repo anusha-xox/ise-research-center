@@ -6,6 +6,10 @@
 			<h1>Welcome {{display_name}}</h1>
 			<br>
 		</header>
+
+		{{ ckeditor.load() }}
+		{{ ckeditor.config(name='body') }}
+
         <p> {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "btn btn-primary text-uppercase"}) }}</p>
     </div>
 </div>
