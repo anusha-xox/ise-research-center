@@ -7,7 +7,7 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, cur
 import email_validator
 from wtforms.fields.html5 import DateField
 from wtforms.validators import ValidationError
-from main import Guide, ckeditor
+from main import ProjectDetails, Guide, ckeditor
 from flask_ckeditor import CKEditor, CKEditorField
 
 REG_CATEGORY = ["GM", "SC", "ST", "Physically Handicapped", "Other"]
@@ -46,14 +46,29 @@ class CandidateForm(FlaskForm):
     duration_type = SelectField('Duration Type', choices=DURATION_TYPE, validators=[DataRequired()])
     c_email = StringField('Email', validators=[DataRequired(), Email()], render_kw={'readonly': True})
     c_phone = StringField('Phone No.', validators=[DataRequired()])
-    c_guide = SelectField("Choose Guide")
+
+    # c_guide = SelectField("Choose Guide")
 
     def validate_reg_date(form, field):
         pass
 
-    def __init__(self, *args, **kwargs):
-        super(CandidateForm, self).__init__(*args, **kwargs)
-        self.c_guide.choices = [c.g_email for c in Guide.query.all()]
+    # def __init__(self, *args, **kwargs):
+    #     super(CandidateForm, self).__init__(*args, **kwargs)
+    #     self.c_guide.choices = [c.g_email for c in Guide.query.all()]
+
+    submit = SubmitField(label='Submit')
+
+
+class CandidateEditForm(FlaskForm):
+    c_fname = StringField('First Name', validators=[DataRequired()])
+    c_mname = StringField('Middle Name')
+    c_lname = StringField('Last Name')
+    c_gender = SelectField('Gender', choices=GENDER, validators=[DataRequired()])
+    reg_category = SelectField('Department Name', choices=REG_CATEGORY, validators=[DataRequired()])
+    thesis_title = StringField('Title of Thesis', validators=[DataRequired()])
+    duration_type = SelectField('Duration Type', choices=DURATION_TYPE, validators=[DataRequired()])
+    c_email = StringField('Email', validators=[DataRequired(), Email()], render_kw={'readonly': True})
+    c_phone = StringField('Phone No.', validators=[DataRequired()])
 
     submit = SubmitField(label='Submit')
 
@@ -86,6 +101,16 @@ class ProjectForm(FlaskForm):
             raise ValidationError("End date must not be earlier than start date.")
 
 
+class AssignGuide(FlaskForm):
+    vtu_no = StringField('VTU Registration Number Of Candidate', validators=[DataRequired()])
+    c_g_email = SelectField("Choose Guide")
+    submit = SubmitField(label='Assign')
+
+    def __init__(self, *args, **kwargs):
+        super(AssignGuide, self).__init__(*args, **kwargs)
+        self.c_g_email.choices = [c.g_email for c in Guide.query.all()]
+
+
 class UpdatePhdStatus(FlaskForm):
     vtu_no = StringField('VTU Registration Number Of Candidate', validators=[DataRequired()],
                          render_kw={'readonly': True})
@@ -100,3 +125,24 @@ class MessageForm(FlaskForm):
     body = CKEditorField("Message Content", validators=[DataRequired()])
     author_email = StringField(label='Email', validators=[DataRequired(), Email()], render_kw={'readonly': True})
     submit = SubmitField(label='Send Message To All')
+
+
+class CandidateToProject(FlaskForm):
+    vtu_no = StringField('VTU Registration Number Of Candidate', validators=[DataRequired()])
+    c_p_id = SelectField("Choose Project")
+    submit = SubmitField(label='Assign')
+
+    def __init__(self, *args, **kwargs):
+        super(CandidateToProject, self).__init__(*args, **kwargs)
+        self.c_p_id.choices = [f"{c.p_id} ~ {c.title}" for c in ProjectDetails.query.all()]
+
+
+class GuideToProject(FlaskForm):
+    c_g_email = SelectField("Choose Guide")
+    g_p_id = SelectField("Choose Project")
+    submit = SubmitField(label='Assign')
+
+    def __init__(self, *args, **kwargs):
+        super(GuideToProject, self).__init__(*args, **kwargs)
+        self.c_g_email.choices = [c.g_email for c in Guide.query.all()]
+        self.g_p_id.choices = [f"{c.p_id} ~ {c.title}" for c in ProjectDetails.query.all()]
