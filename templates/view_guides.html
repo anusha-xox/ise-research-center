@@ -7,14 +7,31 @@
 							<header>
 								<h1>{{ table_heading }}</h1>
 							</header>
-          {% for m in messages: %}
-            <p>
-                {{m.subject}} - {{m.author_email}}<br>
-                {{m.date}}<br>
-                {{m.body|safe}}<br>
-          </p>
-                            <hr>
-                            {% endfor %}
+
+<table class="table table-striped table-light">
+  <thead class="thead-dark">
+    <tr>
+      <th scope="col">Guide Id</th>
+      <th scope="col">Name</th>
+      <th scope="col">Designation</th>
+      <th scope="col">Asso. RC</th>
+      <th scope="col">Email ID</th>
+      <th scope="col">Project ID</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for c in all_guides: %}
+    <tr>
+      <th scope="row">{{ c.g_id }}</th>
+      <td>{{c.g_fname}} {{c.g_mname}} {{c.g_lname}}</td>
+      <td>{{c.g_designation}}</td>
+      <td>{{c.g_arcenter}}</td>
+      <td>{{c.g_email}}</td>
+      <td>{{c.g_p_id}}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
                 </div>
 </div>
 

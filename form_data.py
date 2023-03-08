@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField
-from wtforms.validators import DataRequired, Email, Length
+from wtforms.validators import DataRequired, Email, Length, URL
 from flask_bootstrap import Bootstrap
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
@@ -46,17 +46,11 @@ class CandidateForm(FlaskForm):
     duration_type = SelectField('Duration Type', choices=DURATION_TYPE, validators=[DataRequired()])
     c_email = StringField('Email', validators=[DataRequired(), Email()], render_kw={'readonly': True})
     c_phone = StringField('Phone No.', validators=[DataRequired()])
-
-    # c_guide = SelectField("Choose Guide")
+    c_drive_link = StringField("Drive Link for Thesis", validators=[DataRequired(), URL()])
+    submit = SubmitField(label='Submit')
 
     def validate_reg_date(form, field):
         pass
-
-    # def __init__(self, *args, **kwargs):
-    #     super(CandidateForm, self).__init__(*args, **kwargs)
-    #     self.c_guide.choices = [c.g_email for c in Guide.query.all()]
-
-    submit = SubmitField(label='Submit')
 
 
 class CandidateEditForm(FlaskForm):
@@ -69,7 +63,7 @@ class CandidateEditForm(FlaskForm):
     duration_type = SelectField('Duration Type', choices=DURATION_TYPE, validators=[DataRequired()])
     c_email = StringField('Email', validators=[DataRequired(), Email()], render_kw={'readonly': True})
     c_phone = StringField('Phone No.', validators=[DataRequired()])
-
+    c_drive_link = StringField("Drive Link for Thesis", validators=[DataRequired(), URL()])
     submit = SubmitField(label='Submit')
 
 
@@ -83,6 +77,14 @@ class GuideForm(FlaskForm):
     g_password = PasswordField(label='Password', validators=[DataRequired()])
     submit = SubmitField(label='Submit')
 
+class GuideEditForm(FlaskForm):
+    g_fname = StringField('First Name', validators=[DataRequired()])
+    g_mname = StringField('Middle Name')
+    g_lname = StringField('Last Name')
+    g_designation = SelectField('Designation', choices=DESIGNATION, validators=[DataRequired()])
+    g_arcenter = SelectField('Associated Research Center', choices=ASSO_RC, validators=[DataRequired()])
+    g_email = StringField('Email ID', validators=[DataRequired(), Email()], render_kw={'readonly': True})
+    submit = SubmitField(label='Submit')
 
 class ProjectForm(FlaskForm):
     grant = StringField('Grand Received', validators=[DataRequired()])

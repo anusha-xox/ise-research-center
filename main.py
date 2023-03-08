@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect, flash, send_from_directory
+from flask import Flask, render_template, request, url_for, redirect, flash, send_from_directory, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 import datetime
@@ -12,6 +12,7 @@ from flask_bootstrap import Bootstrap
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
 from flask_ckeditor import CKEditor, CKEditorField
 from form_data import *
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -55,7 +56,7 @@ class Candidate(db.Model):
     c_email = db.Column(db.String(100), unique=True, nullable=False)
     c_phone = db.Column(db.Integer, unique=True, nullable=False)
     thesis_phase = db.Column(db.String(1000))
-
+    c_drive_link = db.Column(db.String(100), unique=True, nullable=True)
     c_p_id = db.Column(db.Integer, unique=False, nullable=True)
     c_g_id = db.Column(db.Integer, unique=False, nullable=True)
 
@@ -97,9 +98,6 @@ def load_user(user_id):
 
     # content = db.Column(db.Text, nullable=False)
     # user_id = db.Column(db.Integer, db.ForeignKey("table_name.column_name"), nullable=False)
-
-    def __repr__(self):
-        return f"Added"
 
 
 db.create_all()
@@ -176,7 +174,8 @@ def candidate_details():
             duration_type=form.duration_type.data,
             c_email=form.c_email.data,
             c_phone=form.c_phone.data,
-            # c_guide=form.c_guide.data
+            c_drive_link=form.c_drive_link.data,
+            c_g_id=0,
         )
         db.session.add(new_candidate)
         db.session.commit()
@@ -193,13 +192,14 @@ def candidate_dashboard():
         "Edit Profile",
         "View Current Projects",
         "View Messages from Guide",
-        "Upload Documents to Guide"
+        "Upload Documents to Guide",
     ]
     CANDIDATE_LINKS = [
         url_for("view_details_candidate", vtu_no=vtu_no),
         url_for("edit_candidate_profile", vtu_no=vtu_no),
         url_for("view_current_projects", vtu_no=vtu_no),
-        url_for("view_messages", vtu_no=vtu_no)
+        url_for("view_messages", vtu_no=vtu_no),
+        current_candidate.c_drive_link
     ]
     return render_template(
         "grid.html",
@@ -209,23 +209,38 @@ def candidate_dashboard():
         grid_no=len(CANDIDATE_OPTIONS)
     )
 
-@app.route("/view-current-projects")
+
+@app.route("/candidate/view-current-projects")
 def view_current_projects():
     vtu_no = int(request.args.get("vtu_no"))
     current_candidate = Candidate.query.get(vtu_no)
-    return render_template("view_current_projects.html", messages=messages,
-                           table_heading=f"{current_candidate.c_fname} {current_candidate.c_mname} {current_candidate.c_lname}'s Messages from Guide")
+    return render_template("view_project_details.html",
+                           all_projects=ProjectDetails.query.filter_by(p_id=current_candidate.c_p_id),
+                           table_heading=f"{current_candidate.c_fname} {current_candidate.c_mname} {current_candidate.c_lname}'s Project Details",
+                           admin=False)
+
+
+@app.route("/guide/view-current-projects")
+def view_current_projects_g():
+    g_id = int(request.args.get("g_id"))
+    current_guide = Guide.query.get(g_id)
+    return render_template("view_project_details.html",
+                           all_projects=ProjectDetails.query.filter_by(p_id=current_guide.g_p_id),
+                           table_heading=f"{current_guide.g_fname} {current_guide.g_mname} {current_guide.g_lname}'s Project Details",
+                           admin=False)
 
 
 @app.route("/view-messages")
 def view_messages():
     vtu_no = int(request.args.get("vtu_no"))
     current_candidate = Candidate.query.get(vtu_no)
-    current_guide = Guide.query.get(current_candidate.c_g_id)
-    guide_email = current_guide.g_email
-    messages = Messages.query.filter_by(author_email=guide_email).all()
-    return render_template("view_messages.html", messages=messages,
-                           table_heading=f"{current_candidate.c_fname} {current_candidate.c_mname} {current_candidate.c_lname}'s Messages from Guide")
+    if current_candidate.c_g_id or current_candidate.c_g_id != 0:
+        current_guide = Guide.query.get(current_candidate.c_g_id)
+        guide_email = current_guide.g_email
+        messages = Messages.query.filter_by(author_email=guide_email).all()
+        return render_template("view_messages.html", messages=messages,
+                               table_heading=f"{current_candidate.c_fname} {current_candidate.c_mname} {current_candidate.c_lname}'s Messages from Guide")
+    return redirect(url_for("candidate_dashboard", vtu_no=vtu_no))
 
 
 @app.route("/view-details-candidate")
@@ -250,7 +265,8 @@ def edit_candidate_profile():
             thesis_title=current_candidate.thesis_title,
             duration_type=current_candidate.duration_type,
             c_email=current_candidate.c_email,
-            c_phone=current_candidate.c_phone
+            c_phone=current_candidate.c_phone,
+            c_drive_link=current_candidate.c_drive_link
         )
         if form.validate_on_submit():
             current_candidate.c_fname = form.c_fname.data
@@ -262,6 +278,7 @@ def edit_candidate_profile():
             current_candidate.duration_type = form.duration_type.data
             current_candidate.c_email = form.c_email.data
             current_candidate.c_phone = form.c_phone.data
+            current_candidate.c_drive_link = form.c_drive_link.data
             db.session.commit()
             return redirect(url_for("candidate_dashboard", vtu_no=vtu_no))
         return render_template("add_details.html", form=form,
@@ -277,9 +294,9 @@ def admin():
         "Assign Candidate to Project",
         "Assign Guide to Project",
         "Assign Student to Guide",
-        "Export Report To Excel",
+        "Export Project Report To Excel",
         "View All Candidates Registered",
-        "View All Faculties"
+        "View All Guides"
     ]
     ADMIN_LINKS = [
         url_for("add_project"),
@@ -288,11 +305,9 @@ def admin():
         url_for("candidate_to_project"),
         url_for("guide_to_project"),
         url_for("assign_guide"),
-        "",
-        "",
-        "",
-        "",
-        ""
+        url_for("projects_to_excel"),
+        url_for("view_all_candidates"),
+        url_for("view_all_guides")
     ]
     return render_template(
         "grid.html",
@@ -301,6 +316,55 @@ def admin():
         grid_links=ADMIN_LINKS,
         grid_no=len(ADMIN_OPTIONS)
     )
+
+
+@app.route("/admin/view-all-guides")
+def view_all_guides():
+    all_guides = Guide.query.all()
+    return render_template("view_guides.html", all_guides=all_guides, table_heading="All Guides", admin=True)
+
+
+def to_dict(row):
+    if row is None:
+        return None
+
+    rtn_dict = dict()
+    keys = row.__table__.columns.keys()
+    for key in keys:
+        rtn_dict[key] = getattr(row, key)
+    return rtn_dict
+
+
+@app.route("/admin/to-excel")
+def projects_to_excel():
+    data = ProjectDetails.query.all()
+    data_list = [item.title for item in data]
+    df = pd.DataFrame(data_list)
+    # filename = app.config['static'] + "static/reports/autos.xlsx"
+    # filename = app.config['APPLICATION_ROOT'] + "autos.xlsx"
+    filename = 'data.xlsx'
+    writer = pd.ExcelWriter(filename)
+    df.to_excel(writer)
+    writer.save()
+    return send_file(filename="data.xlsx", as_attachment=True)
+
+
+@app.route("/admin/view-all-candidates")
+def view_all_candidates():
+    all_candidates = Candidate.query.all()
+    return render_template("view_candidates_under.html", candidates=all_candidates, table_heading="All Candidates",
+                           guide=False, admin=True)
+
+
+@app.route("/admin/delete-candidate", methods=["GET", "POST"])
+def delete_candidate():
+    vtu_no = int(request.args.get("vtu_no"))
+    current_candidate = Candidate.query.get(vtu_no)
+    c_user = User.query.filter_by(email=current_candidate.c_email).first()
+    db.session.delete(current_candidate)
+    db.session.delete(c_user)
+    db.session.commit()
+    return redirect(url_for('admin'))
 
 
 @app.route("/admin/edit-project", methods=["GET", "POST"])
@@ -386,14 +450,16 @@ def guide_dashboard():
         "Edit Profile",
         "View Candidates Under Me",
         "View My Projects",
-        "Send Message to Candidates"
+        "Send Message to Candidates",
+        "View Sent Messages"
     ]
     GUIDE_LINKS = [
-        "",
-        "",
+        url_for("view_guide", g_id=g_id),
+        url_for("edit_guide", g_id=g_id),
         url_for("view_candidates_under", g_id=g_id),
-        "",
-        url_for("add_messages", email=current_guide.g_email)
+        url_for("view_current_projects_g", g_id=g_id),
+        url_for("add_messages", email=current_guide.g_email),
+        url_for("view_sent_messages", g_id=g_id)
     ]
     return render_template(
         "grid.html",
@@ -402,6 +468,46 @@ def guide_dashboard():
         grid_links=GUIDE_LINKS,
         grid_no=len(GUIDE_OPTIONS)
     )
+
+
+@app.route("/guide/view-sent-messages")
+def view_sent_messages():
+    g_id = int(request.args.get("g_id"))
+    current_guide = Guide.query.get(g_id)
+    guide_email = current_guide.g_email
+    messages = Messages.query.filter_by(author_email=guide_email).all()
+    return render_template("view_messages.html", messages=messages, table_heading=f"My Sent Messages")
+
+
+@app.route("/guide/view-profile")
+def view_guide():
+    g_id = int(request.args.get("g_id"))
+    guide = Guide.query.filter_by(g_id=g_id).all()
+    return render_template("view_guides.html", all_guides=guide, table_heading="My Profile", admin=False)
+
+
+@app.route("/guide/edit-profile", methods=["GET", "POST"])
+def edit_guide():
+    g_id = int(request.args.get("g_id"))
+    current_guide = Guide.query.get(g_id)
+    form = GuideEditForm(
+        g_fname=current_guide.g_fname,
+        g_mname=current_guide.g_mname,
+        g_lname=current_guide.g_lname,
+        g_designation=current_guide.g_designation,
+        g_arcenter=current_guide.g_arcenter,
+        g_email=current_guide.g_email
+    )
+    if form.validate_on_submit():
+        current_guide.g_fname = form.g_fname.data
+        current_guide.g_mname = form.g_mname.data
+        current_guide.g_lname = form.g_lname.data
+        current_guide.g_designation = form.g_designation.data
+        current_guide.g_arcenter = form.g_arcenter.data
+        db.session.commit()
+        return redirect(url_for("guide_dashboard", g_id=g_id))
+    return render_template("add_details.html", form=form,
+                           display_name=f"{current_guide.g_fname} {current_guide.g_mname} {current_guide.g_lname}")
 
 
 @app.route("/update-thesis-status", methods=["GET", "POST"])
@@ -443,14 +549,14 @@ def add_messages():
                            display_name=f"{current_guide.g_fname} {current_guide.g_mname} {current_guide.g_lname}")
 
 
-@app.route("/view-candidates-under")
+@app.route("/guide/view-candidates-under")
 def view_candidates_under():
     g_id = int(request.args.get("g_id"))
     current_guide = Guide.query.get(g_id)
     candidates = Candidate.query.filter_by(c_g_id=g_id).all()
     if candidates:
         return render_template("view_candidates_under.html", candidates=candidates,
-                               table_heading=f"Candidates Under {current_guide.g_fname}")
+                               table_heading=f"Candidates Under {current_guide.g_fname}", guide=True)
     return redirect(url_for("guide_dashboard", g_id=current_guide.g_id))
 
 
@@ -500,7 +606,8 @@ def add_project():
 @app.route("/view-project-details", methods=["GET", "POST"])
 def view_project_details():
     all_projects = ProjectDetails.query.order_by("date_of_issue").all()
-    return render_template("view_project_details.html", all_projects=all_projects, table_heading="All Projects")
+    return render_template("view_project_details.html", all_projects=all_projects, table_heading="All Projects",
+                           admin=True)
 
 
 @app.route('/about')

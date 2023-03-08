@@ -15,11 +15,17 @@
       <th scope="col">Name</th>
       <th scope="col">Gender</th>
       <th scope="col">Reg Category</th>
+      <th scope="col">Reg Date</th>
       <th scope="col">Thesis Title</th>
       <th scope="col">Duration</th>
       <th scope="col">Email</th>
       <th scope="col">Phone</th>
       <th scope="col">Thesis Phase</th>
+      <th scope="col">Project ID</th>
+      {% if admin %}
+      <th scope="col">Guide ID</th>
+      {% endif %}
+      <th scope="col">Drive Link</th>
     </tr>
   </thead>
   <tbody>
@@ -29,18 +35,32 @@
       <td>{{c.c_fname}} {{c.c_mname}} {{c.c_lname}}</td>
       <td>{{c.c_gender}}</td>
       <td>{{c.reg_category}}</td>
+      <td>{{c.reg_date}}</td>
       <td>{{c.thesis_title}}</td>
       <td>{{c.duration_type}}</td>
-      <td>{{c.c_email}}</td>
+      <td><a href="mailto:{{c.c_email}}?subject=RVCE%20PhD%20Thesis:%20(ISE%20Research%20Center)">{{c.c_email}}</a></td>
       <td>{{c.c_phone}}</td>
       <td>{{c.thesis_phase}}</td>
-
+      <td>{{c.c_p_id}}</td>
+      {% if admin %}
+      <td>{{c.c_g_id}}</td>
+      {% endif %}
+      <td></td>
+        <td><a href="{{c.c_drive_link}}">Drive Link</a></td>
+      {% if guide %}
       <td>
-<!--          <p><b><a href="{{ url_for('register') }}">Approve</a>.</b></p>-->
           <form action="{{ url_for('update_thesis_status', vtu_no= c.vtu_no)}}" method="post">
-                      <input class="btn btn-default" id="submit" name="submit" type="submit" value="Update Status">
+                      <input class="btn btn-default" name="submit" type="submit" value="Update Status">
             </form>
       </td>
+      {% endif %}
+      {% if admin %}
+      <td>
+          <form action="{{ url_for('delete_candidate', vtu_no= c.vtu_no)}}" method="post">
+                      <input class="btn btn-default" name="submit" type="submit" value="Delete Candidate">
+            </form>
+      </td>
+      {% endif %}
 
     </tr>
     {% endfor %}
