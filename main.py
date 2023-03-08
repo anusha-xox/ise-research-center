@@ -12,6 +12,7 @@ from flask_bootstrap import Bootstrap
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
 from flask_ckeditor import CKEditor, CKEditorField
 from form_data import *
+import gunicorn
 import pandas as pd
 
 app = Flask(__name__)
@@ -622,4 +623,4 @@ def logout():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True)
