@@ -1,9 +1,0 @@
-(venv) C:\Users\anush\PycharmProjects\ise-research-center>python
-Python 3.10.5 (tags/v3.10.5:f377153, Jun  6 2022, 16:14:13) [MSC v.1929 64 bit (AMD64)] on win32
-Type "help", "copyright", "credits" or "license" for more information.
->>> from main import db
->>> db.create_all()
->>> from main import User, Candidate
->>> user1 = User(username="anushajain", email="anusha@email.com", password="anusha")
->>> db.session.add(user1)
->>> db.session.commit()
